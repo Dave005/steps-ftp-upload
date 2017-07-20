@@ -2,12 +2,13 @@ title: "FTP Upload"
 summary: You get what you see, upload a file or directory to the target directory
 description: |-
   Upload a single file or a folder (recursively) to an FTP server.
-website: https://github.com/bitrise-io/steps-ftp-upload
-source_code_url: https://github.com/bitrise-io/steps-ftp-upload
-support_url: https://github.com/bitrise-io/steps-ftp-upload/issues
+website: https://github.com/Dave005/steps-ftp-upload
+source_code_url: https://github.com/Dave005/steps-ftp-upload
+support_url: https://github.com/Dave005/steps-ftp-upload/issues
 host_os_tags:
   - osx-10.9
-project_type_tags: []
+project_type_tags:
+  - android
 type_tags:
   - ftp
   - uploader
@@ -15,8 +16,16 @@ type_tags:
 is_requires_admin_user: false
 is_always_run: false
 is_skippable: false
-dependencies: []
-run_if: ""
+run_if: ".IsCI"
+deps:
+  brew:
+  - name: go
+  apt_get:
+  - name: golang
+    bin_name: go
+toolkit:
+  go:
+    package_name: github.com/Dave005/bitrise-step-build-version-file
 inputs:
   - hostname: ""
     opts:
@@ -47,6 +56,12 @@ inputs:
       summary: ""
       is_required: true
       is_expand: true
+  - port:
+    opts:
+    title: "Port"
+    summary: ""
+    description: ""
+    is_required: true
   - upload_target_path: ""
     opts:
       title: "Target / remote path"
