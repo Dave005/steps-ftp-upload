@@ -3,10 +3,12 @@ package main
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
+
+	pb "gopkg.in/cheggaaa/pb.v1"
 
 	"golang.org/x/crypto/ssh"
 
@@ -107,7 +109,9 @@ func main() {
 
 	filename := filepath.Base(configs.uploadSourcePath)
 
-	dat, err := ioutil.ReadFile(configs.uploadSourcePath)
+	//dat, err := ioutil.ReadFile(configs.uploadSourcePath)
+	// my io.Reader
+	r, err := os.Open(configs.uploadSourcePath)
 
 	if err != nil {
 		log.Fatalf("Error reading file: %s\n", err.Error())
@@ -120,8 +124,21 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	if _, err := f.Write(dat); err != nil {
+
+	// create and start bar
+	stat, _ := r.Stat()
+	size := stat.Size()
+	bar := pb.New(int(size)).SetUnits(pb.U_BYTES)
+	bar.Start()
+
+	// create proxy reader
+	reader := bar.NewProxyReader(r)
+
+	// and copy from pb reader
+	io.Copy(f, reader)
+
+	/*if _, err := f.Write(dat); err != nil {
 		log.Fatal(err)
-	}
+	}*/
 
 }
