@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"os/exec"
 	"path/filepath"
 
 	"golang.org/x/crypto/ssh"
@@ -70,95 +69,6 @@ func (configs ConfigsModel) validate() error {
 	}
 
 	return nil
-}
-
-/*func exportEnvironmentWithEnvman(keyStr, valueStr string) error {
-	cmd := cmdex.NewCommand("envman", "add", "--key", keyStr)
-	cmd.SetStdin(strings.NewReader(valueStr))
-	return cmd.Run()
-}*/
-
-func connectWithSSH(configs ConfigsModel) {
-	// Connect to a remote host and request the sftp subsystem via the 'ssh'
-	// command.  This assumes that passwordless login is correctly configured.
-	log.Println("connecting ssh...")
-	log.Println(configs.username + "@" + configs.hostname)
-	cmd := exec.Command("ssh", configs.username+"@"+configs.hostname, "-s", "sftp", "-p", configs.port)
-
-	// send errors from ssh to stderr
-	cmd.Stderr = os.Stderr
-
-	// get stdin and stdout
-	wr, err := cmd.StdinPipe()
-	if err != nil {
-		log.Fatal(err)
-	}
-	rd, err := cmd.StdoutPipe()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// start the process
-	if err := cmd.Start(); err != nil {
-		log.Fatal(err)
-	}
-	//log.Println("printing password")
-	//wr.Write([]byte(configs.password))
-	defer cmd.Wait()
-
-	log.Println("open sftp channel")
-	// open the SFTP session
-	client, err := sftp.NewClientPipe(rd, wr)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// walk a directory
-	log.Println("Walking")
-	w := client.Walk(configs.uploadTargetPath)
-	for w.Step() {
-		if w.Err() != nil {
-			continue
-		}
-		log.Println(w.Path())
-	}
-	log.Println("Walking finished")
-
-	filename := filepath.Base(configs.uploadSourcePath)
-
-	dat, err := ioutil.ReadFile(configs.uploadSourcePath)
-
-	if err != nil {
-		log.Fatalf("Error in opening source file: %s", err.Error())
-	}
-
-	// check if its already there
-	fi, err := client.Lstat(filename)
-	if err == nil {
-		//log.Fatal(err)
-		//sftp.Remove(filename)
-		log.Printf("file already there !")
-		log.Println(fi)
-	}
-
-	// leave your mark
-	f, err := client.Create(filename)
-	if err != nil {
-		log.Fatal(err)
-	}
-	if _, err := f.Write(dat); err != nil {
-		log.Fatal(err)
-	}
-
-	// check it's there
-	fi2, err := client.Lstat(filename)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Println(fi2)
-
-	// close the connection
-	client.Close()
 }
 
 func main() {
