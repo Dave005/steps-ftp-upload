@@ -9,6 +9,8 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"golang.org/x/crypto/ssh"
+
 	"github.com/pkg/sftp"
 	//"github.com/bitrise-io/go-utils/cmdex"
 )
@@ -63,7 +65,7 @@ func (configs ConfigsModel) validate() error {
 		return errors.New("No Upload target path specified")
 	}
 
-	if configs.port == ""{
+	if configs.port == "" {
 		return errors.New("No port specified!")
 	}
 
@@ -79,6 +81,8 @@ func (configs ConfigsModel) validate() error {
 func connectWithSSH(configs ConfigsModel) {
 	// Connect to a remote host and request the sftp subsystem via the 'ssh'
 	// command.  This assumes that passwordless login is correctly configured.
+	log.Println("connecting ssh...")
+	log.Println(configs.username + "@" + configs.hostname)
 	cmd := exec.Command("ssh", configs.username+"@"+configs.hostname, "-s", "sftp", "-p", configs.port)
 
 	// send errors from ssh to stderr
@@ -98,9 +102,11 @@ func connectWithSSH(configs ConfigsModel) {
 	if err := cmd.Start(); err != nil {
 		log.Fatal(err)
 	}
-	wr.Write([]byte(configs.password))
+	//log.Println("printing password")
+	//wr.Write([]byte(configs.password))
 	defer cmd.Wait()
 
+	log.Println("open sftp channel")
 	// open the SFTP session
 	client, err := sftp.NewClientPipe(rd, wr)
 	if err != nil {
@@ -108,6 +114,7 @@ func connectWithSSH(configs ConfigsModel) {
 	}
 
 	// walk a directory
+	log.Println("Walking")
 	w := client.Walk(configs.uploadTargetPath)
 	for w.Step() {
 		if w.Err() != nil {
@@ -115,6 +122,8 @@ func connectWithSSH(configs ConfigsModel) {
 		}
 		log.Println(w.Path())
 	}
+	log.Println("Walking finished")
+
 	filename := filepath.Base(configs.uploadSourcePath)
 
 	dat, err := ioutil.ReadFile(configs.uploadSourcePath)
@@ -158,6 +167,51 @@ func main() {
 	if err := configs.validate(); err != nil {
 		log.Fatalf("Issue with input: %s", err)
 	}
-	connectWithSSH(configs)
+	//connectWithSSH(configs)
+
+	sshConfig := &ssh.ClientConfig{
+		User: configs.username,
+		Auth: []ssh.AuthMethod{
+			ssh.Password(configs.password),
+		},
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+	}
+
+	connection, err := ssh.Dial("tcp", configs.hostname+":"+configs.port, sshConfig)
+	if err != nil {
+		log.Fatalf("Failed to dial: %s", err)
+	}
+
+	defer connection.Close()
+
+	// open an SFTP session over an existing ssh connection.
+	sftp, err := sftp.NewClient(connection)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer sftp.Close()
+
+	wd, err := sftp.Getwd()
+
+	log.Println("wd: " + wd)
+
+	filename := filepath.Base(configs.uploadSourcePath)
+
+	dat, err := ioutil.ReadFile(configs.uploadSourcePath)
+
+	if err != nil {
+		log.Fatalf("Error reading file: %s\n", err.Error())
+	}
+
+	log.Printf("target file: %s\n", configs.uploadTargetPath+filename)
+
+	// leave your mark
+	f, err := sftp.Create(configs.uploadTargetPath + filename)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if _, err := f.Write(dat); err != nil {
+		log.Fatal(err)
+	}
 
 }

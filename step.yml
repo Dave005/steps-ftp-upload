@@ -27,47 +27,39 @@ toolkit:
   go:
     package_name: github.com/Dave005/bitrise-step-build-version-file
 inputs:
-  - hostname: ""
+  - hostname: 
     opts:
-      title: "Host"
-      summary: ""
-      description: |-
-        Host of the target FTP (example: ftp.someserver.com)
-      is_required: true
-      is_required: true
-  - username: ""
-    opts:
-      title: "Username"
+      title: "sftp hostname"
       summary: ""
       description: ""
       is_required: true
-  - password: ""
+  - username:
     opts:
-      title: "Password"
+      title: "sft username"
       summary: ""
       description: ""
       is_required: true
-  - upload_source_path: ""
+  - password: 
     opts:
-      title: "Source path"
-      description: |
-        The source (local) file or directory for the FTP upload.
-        Format examples: "$HOME/temp" or "$HOME/temp/")
+      title: "sftp password"
       summary: ""
+      description: ""
       is_required: true
-      is_expand: true
-  - port:
+  - upload_source_path: 
     opts:
-    title: "Port"
-    summary: ""
-    description: ""
-    is_required: true
-  - upload_target_path: ""
-    opts:
-      title: "Target / remote path"
-      description: |
-        The target (remote) path for the FTP upload.
-        Target is handled as directory if ends with "/", file otherwise.
+      title: "path for the file to upload"
       summary: ""
+      description: ""
       is_required: true
-outputs: []
+  - upload_target_path: 
+    opts:
+      title: "path to the folder where the file should be placed"
+      summary: ""
+      description: ""
+      is_required: true
+  - port: 
+    opts:
+      title: "Port for sftp connection"
+      summary: ""
+      description: ""
+      is_required: true            

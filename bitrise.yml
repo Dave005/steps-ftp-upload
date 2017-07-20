@@ -41,10 +41,10 @@ workflows:
         title: Step Test
         run_if: true
         inputs:
-        - hostname: $HOSTNAME
-        - username: $USERNAME
-        - password: $PASSWORD
-        - port: $PORT
+        - hostname: "$HOSTNAME"
+        - username: "$USERNAME"
+        - password: "$PASSWORD"
+        - port: "$PORT"
         - upload_source_path: "./test.txt"
         - upload_target_path: "/var/www/html/update.datenstrom.online/"
 
